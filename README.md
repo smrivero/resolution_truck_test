@@ -1,72 +1,67 @@
 # Good Fit Test — Solver
 
-## Instalación (una sola vez)
+## Installation (once)
 
 ```bash
 pip install openpyxl pandas openai python-dotenv
 ```
 
-## Configuración
+## Configuration
 
-Editá el archivo `.env` en la misma carpeta del script y ponés tu API key:
+Edit the `.env` file in the same folder as the script and add your API key:
 
 ```
-OPENAI_API_KEY=sk-...tu_key_aqui...
+OPENAI_API_KEY=sk-...your_key_here...
 ```
 
-Sin la key el script igual corre usando extracción determinística (regex/keywords).
-
-OPENAI_LOG=1 python3 solve_cinesis_test.py cinesis_good_fit_test_clean output/cinesis_good_fit_test_output.xlsx
-OPENAI_LOG=1 python3 solve_cinesis_test.py Tulsa_Reefer_cinesis_good_fit_test_clean output/Tulsa_Reefer_cinesis_good_fit_test_output.xlsx
-OPENAI_LOG=1 python3 solve_cinesis_test.py VAN_cinesis_good_fit_test_clean output/VAN_cinesis_good_fit_test_output.xlsx
-OPENAI_LOG=1 python3 solve_cinesis_test.py Hotshot_cinesis_good_fit_test_clean output/Hotshot_cinesis_good_fit_test_output.xlsx
-OPENAI_LOG=1 python3 solve_cinesis_test.py Flatbed_cinesis_good_fit_test_clean output/Flatbed_cinesis_good_fit_test_output.xlsx
----
-
-## Uso
-
-```bash
-python3 solve_cinesis_test.py <archivo_entrada> <archivo_salida>
-```
-
-- La extensión `.xlsx` en el input es opcional — el script la agrega si falta.
-- La carpeta de output se crea automáticamente si no existe.
-- Si omitís los argumentos usa `good_fit_test_clean.xlsx` y `good_fit_test_completed.xlsx` por defecto.
-
-### Con logs de OpenAI visibles en consola
-
-```bash
-OPENAI_LOG=1 python3 solve_cinesis_test.py <entrada> <salida>
-```
-
-Activa la impresión del prompt completo enviado a OpenAI y la respuesta JSON cruda (con tokens usados y finish_reason) tanto en consola como en el archivo de log.
+Without the key the script still runs using deterministic extraction (regex/keywords).
 
 ---
 
-## Ejemplos reales
+## Usage
 
 ```bash
-# Conversación original del test
+python3 solve_cinesis_test.py <input_file> <output_file>
+```
+
+- The `.xlsx` extension on the input is optional — the script appends it if missing.
+- The output folder is created automatically if it does not exist.
+- If arguments are omitted, defaults to `good_fit_test_clean.xlsx` → `good_fit_test_completed.xlsx`.
+
+### With full OpenAI logs printed to console
+
+```bash
+OPENAI_LOG=1 python3 solve_cinesis_test.py <input> <output>
+```
+
+Prints the full prompt sent to OpenAI and the raw JSON response (including token usage and finish_reason) to both console and log file.
+
+---
+
+## Examples
+
+```bash
+# Original test conversation
 OPENAI_LOG=1 python3 solve_cinesis_test.py \
   good_fit_test_clean \
   output/good_fit_test_output.xlsx
 
-# Driver con equipo Reefer saliendo de Tulsa
+# Reefer driver out of Tulsa
 OPENAI_LOG=1 python3 solve_cinesis_test.py \
   Tulsa_Reefer_good_fit_test_clean \
   output/Tulsa_Reefer_good_fit_test_output.xlsx
 
-# Driver con Van
+# Van driver
 OPENAI_LOG=1 python3 solve_cinesis_test.py \
   VAN_good_fit_test_clean \
   output/VAN_good_fit_test_output.xlsx
 
-# Driver Hotshot
+# Hotshot driver
 OPENAI_LOG=1 python3 solve_cinesis_test.py \
   Hotshot_good_fit_test_clean \
   output/Hotshot_good_fit_test_output.xlsx
 
-# Driver Flatbed
+# Flatbed driver
 OPENAI_LOG=1 python3 solve_cinesis_test.py \
   Flatbed_good_fit_test_clean \
   output/Flatbed_good_fit_test_output.xlsx
@@ -76,114 +71,112 @@ OPENAI_LOG=1 python3 solve_cinesis_test.py \
 
 ## Logs
 
-Cada ejecución genera automáticamente un archivo en la carpeta `logs/`:
+Each run automatically creates a file in the `logs/` folder:
 
 ```
 logs/log_20260618_181600.log
 ```
 
-El nombre incluye fecha y hora (`YYYYMMDD_HHMMSS`) para que cada run quede registrado por separado sin sobreescribirse.
+The filename includes date and time (`YYYYMMDD_HHMMSS`) so each run is saved separately without overwriting.
 
-**Qué contiene el log:**
-- Todo lo que se ve en consola (timestamps, perfil extraído, skips, rechazos, ranking final)
-- Si `OPENAI_LOG=1`: el system prompt, el user message completo (transcripción + tabla de ciudades), y la respuesta JSON de OpenAI con tokens usados
+**What the log contains:**
+- Everything printed to console (timestamps, extracted profile, skips, rejections, final ranking)
+- If `OPENAI_LOG=1`: the full system prompt, the complete user message (transcript + city table), and the OpenAI JSON response with token usage
 
-El archivo de log guarda **siempre todo en nivel DEBUG**, independientemente de si `OPENAI_LOG` está activo o no en consola.
+The log file always saves everything at DEBUG level regardless of whether `OPENAI_LOG` is active in the console.
 
 ---
 
-## Cómo funciona el script
+## How it works
 
-### Estructura del workbook de entrada
+### Input workbook structure
 
-El `.xlsx` debe tener estos tabs:
+The `.xlsx` must have these tabs:
 
-| Tab | Contenido |
+| Tab | Content |
 |---|---|
-| `Sample Conversation` | Transcripción del diálogo driver–dispatch (columnas Speaker / Dialogue) |
-| `Loads` | Tabla de cargas disponibles con origen, destino, coordenadas, trailer, peso, precio |
-| `Part A (Fill In)` | Template donde el script escribe el perfil extraído |
-| `Part B (Fill In)` | Template donde el script escribe el top 3 de cargas |
+| `Sample Conversation` | Driver–dispatch dialogue transcript (Speaker / Dialogue columns) |
+| `Loads` | Available loads with origin, destination, coordinates, trailer type, weight, price |
+| `Part A (Fill In)` | Template where the script writes the extracted driver profile |
+| `Part B (Fill In)` | Template where the script writes the top 3 loads |
 
-### Part A — Extracción del perfil
+### Part A — Profile extraction
 
-El script lee la transcripción del tab `Sample Conversation` y extrae un objeto JSON estructurado con evidencia y confianza para cada campo:
+The script reads the transcript from the `Sample Conversation` tab and extracts a structured JSON object with evidence and confidence for every field:
 
-| Campo | Cómo se extrae |
+| Field | How it is extracted |
 |---|---|
-| `current_location` | Frase del driver tipo "I'm in Dallas" — solo líneas del driver |
-| `home_base` | Dispatch menciona ciudad → driver confirma ("Yes, that's correct / usually in that area") |
-| `minimum_rate_per_mile` | Frase del driver con "per mile" — solo líneas del driver para no confundir con las cotizaciones del dispatcher |
-| `equipment_types` | Solo líneas del driver que contienen marcadores de posesión ("I run", "I drive", "I have") — excluye preguntas retóricas como "Do y'all deal with hotshots?" |
-| `weight_capacity_lb` | Si el driver lo dice explícitamente se usa ese valor. Si no, se infiere del equipo (`inferred: true`) con una nota de la suposición |
-| `constraints` / `notes` | Preferencias de lanes, factoring, días de trabajo, etc. |
+| `current_location` | Driver phrase like "I'm in Dallas" — driver lines only |
+| `home_base` | Dispatch mentions a city → driver confirms ("Yes, that's correct / usually in that area") |
+| `minimum_rate_per_mile` | Driver phrase containing "per mile" — driver lines only to avoid matching dispatcher rate quotes |
+| `equipment_types` | Driver lines containing ownership markers ("I run", "I drive", "I have") — excludes rhetorical questions like "Do y'all deal with hotshots?" |
+| `weight_capacity_lb` | Used directly if the driver states it explicitly. Otherwise inferred from equipment (`inferred: true`) with a documented assumption |
+| `constraints` / `notes` | Lane preferences, factoring requirements, working schedule, etc. |
 
-**Extracción con OpenAI (si hay API key):** usa GPT-4o con structured outputs y un JSON Schema estricto. El modelo recibe la transcripción más la tabla de ciudades con coordenadas.
+**With OpenAI (API key set):** uses GPT-4o with structured outputs and a strict JSON Schema. The model receives the transcript and returns coordinates directly — GPT-4o knows the coordinates of any city in the world. No external mapping APIs are called.
 
-**Fallback determinístico (sin API key):** regex y keywords sobre las líneas del driver. Produce el mismo objeto JSON con los mismos campos.
+**Deterministic fallback (no API key):** regex and keyword matching over driver lines. Produces the same JSON object with the same fields. A local city coordinate table is used as backup to fill in any null lat/lon values.
 
-**Coordenadas:** cuando se usa OpenAI, el modelo devuelve directamente `lat` y `lon` para cada ciudad — GPT-4o conoce las coordenadas de cualquier ciudad del mundo. La tabla de ciudades local solo se usa como red de seguridad en el fallback determinístico (sin API key) y para rellenar coordenadas que el modelo haya dejado en null.
+### Part B — Filtering and ranking
 
-### Part B — Filtrado y ranking
-
-La fórmula usada es la que indica el tab `Part B (Fill In)` del workbook:
+The formula used is the one stated in the `Part B (Fill In)` tab of the workbook:
 
 ```
 effective_rate_per_mile = price ÷ (deadhead_to_origin + loaded_miles + deadhead_home)
 ```
 
-Todas las distancias se calculan con la fórmula **Haversine** (distancia en línea recta en millas, *great-circle*).
+All distances are calculated using the **Haversine** formula (straight-line great-circle miles).
 
-#### Por qué se excluyen las filas con MISSING
+#### Why MISSING rows are excluded
 
-Algunas filas de la tabla de cargas tienen campos marcados como `MISSING`:
+Some rows in the loads table have fields marked as `MISSING`:
 
-- **Sin precio:** no se puede calcular el effective rate (la fórmula requiere el numerador). Se registra el motivo y se omite.
-- **Sin destino o coordenadas de destino:** no se puede calcular `loaded_miles` ni `deadhead_home`. Se registra el motivo y se omite.
+- **No price:** the effective rate cannot be calculated (the formula needs the numerator). The reason is recorded and the row is skipped.
+- **No destination or destination coordinates:** `loaded_miles` and `deadhead_home` cannot be calculated. The reason is recorded and the row is skipped.
 
-El script también descarta filas donde esos valores son vacíos, `NaN`, o no numéricos — no solo el string literal `"MISSING"` — para ser robusto ante cualquier variante de dato ausente.
+The script also discards rows where those values are empty, `NaN`, or non-numeric — not just the literal string `"MISSING"` — to handle any variant of missing data.
 
-#### Filtros aplicados antes del ranking (en orden)
+#### Filters applied before ranking (in order)
 
-**1. Tipo de trailer (equipment)**
+**1. Trailer type (equipment)**
 
-El tipo de trailer de la carga se normaliza a forma canónica y se compara contra el equipo extraído del perfil:
+The load's trailer type is normalized to canonical form and compared against the equipment extracted from the profile:
 
-| Input en el workbook | Forma canónica |
+| Value in workbook | Canonical form |
 |---|---|
 | `"hot shot"`, `"hot-shot"` | `hotshot` |
 | `"goose neck"`, `"goose-neck"` | `gooseneck` |
 | `"flat bed"`, `"flat-bed"` | `flatbed` |
 | `"dry van"`, `"dry-van"` | `van` |
 
-Se usa **interpretación conservadora**: Flatbed no se asume compatible con Hotshot/Gooseneck a menos que el driver lo diga explícitamente. Van nunca matchea Hotshot.
+**Conservative interpretation:** Flatbed is not assumed compatible with Hotshot/Gooseneck unless the driver explicitly says so. Van never matches Hotshot.
 
-Las cargas rechazadas por este filtro muestran la forma normalizada para facilitar el debug:
+Rejected loads show the normalized form to make debugging easier:
 ```
 REJECT L05: Trailer 'Flatbed' (→ 'flatbed') not in driver equipment ['Hotshot', 'Gooseneck'] (→ ['hotshot', 'gooseneck'])
 ```
 
-**2. Peso**
+**2. Weight**
 
-`load.weight ≤ weight_capacity_lb` extraído del perfil.  
-Si el weight capacity es `null` (no se pudo extraer ni inferir), la carga se rechaza con una nota explicando que no se puede verificar el peso.
+`load.weight ≤ weight_capacity_lb` extracted from the profile.
+If weight capacity is `null` (could not be extracted or inferred), the load is rejected with a note explaining that weight cannot be verified.
 
-**3. Effective rate mínimo**
+**3. Minimum effective rate**
 
-`effective_rate ≥ minimum_rate_per_mile` extraído del perfil.  
-Si el mínimo es `null` (no mencionado en la transcripción), este filtro no se aplica y se deja constancia en el log.
+`effective_rate ≥ minimum_rate_per_mile` extracted from the profile.
+If the minimum is `null` (not mentioned in the transcript), this filter is not applied and the assumption is recorded in the log.
 
 #### Ranking
 
-Las cargas que pasan los tres filtros se ordenan de mayor a menor effective rate. Las top 3 se escriben en el tab `Part B (Fill In)` con el rate formateado como número flotante con 3 decimales y formato Excel `$#,##0.000` (para evitar ambigüedad entre separador decimal y de miles según la configuración regional).
+Loads that pass all three filters are sorted from highest to lowest effective rate. The top 3 are written to the `Part B (Fill In)` tab as floating-point numbers with 3 decimal places and Excel number format `$#,##0.000` (to avoid ambiguity between decimal and thousands separators across regional settings).
 
 ---
 
-## Resultados — conversación original
+## Sample results — original conversation
 
 ### Part A
 
-| Campo | Valor |
+| Field | Value |
 |---|---|
 | Current Location | Dallas, TX (32.7767, −96.797) |
 | Home Base | San Antonio, TX (29.4241, −98.4936) |
@@ -193,23 +186,23 @@ Las cargas que pasan los tres filtros se ordenan de mayor a menor effective rate
 
 ### Part B — Top 3
 
-| Rank | Load | Ruta | Effective Rate | Detalle |
+| Rank | Load | Route | Effective Rate | Breakdown |
 |---|---|---|---|---|
 | 1 | L03 | Austin → Corpus Christi | **$3.098/mi** | DH 182 + 172 loaded + 130 DH-home = 484 mi |
 | 2 | L08 | Dallas → McAllen | **$2.480/mi** | DH 0 + 462 loaded + 223 DH-home = 685 mi |
 | 3 | L02 | Houston → Laredo | **$2.418/mi** | DH 225 + 293 loaded + 144 DH-home = 662 mi |
 
-### Skipped (datos incompletos)
+### Skipped (incomplete data)
 
-| Carga | Motivo |
+| Load | Reason |
 |---|---|
-| L06 | `Price ($)` = MISSING — sin precio no se puede calcular effective rate |
-| L07 | Destination, Dest Lat, Dest Lon = MISSING — sin destino no se puede calcular la ruta |
+| L06 | `Price ($)` = MISSING — cannot calculate effective rate without price |
+| L07 | Destination, Dest Lat, Dest Lon = MISSING — cannot calculate route without destination |
 
-### Rechazadas (inelegibles)
+### Rejected (ineligible)
 
-| Carga | Motivo |
+| Load | Reason |
 |---|---|
-| L01 | Trailer `Van` — no matchea equipo del driver |
-| L04 | Trailer `Van` — no matchea equipo del driver (aunque el precio es $1,500, igual al #1) |
-| L05 | Trailer `Flatbed` — excluida por interpretación conservadora |
+| L01 | Trailer `Van` — does not match driver equipment |
+| L04 | Trailer `Van` — does not match driver equipment (price is $1,500, same as #1, but equipment filter eliminates it) |
+| L05 | Trailer `Flatbed` — excluded by conservative interpretation |
