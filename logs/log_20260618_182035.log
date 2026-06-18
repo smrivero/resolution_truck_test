@@ -1,0 +1,233 @@
+18:20:35  INFO  Input:  Hotshot_cinesis_good_fit_test_clean.xlsx
+18:20:35  INFO  Output: output/Hotshot_cinesis_good_fit_test_output.xlsx
+18:20:35  INFO  [1/5] Building city coordinate table...
+18:20:35  INFO    78 entries
+18:20:35  INFO  [2/5] Extracting driver profile...
+18:20:35  INFO    → OpenAI GPT-4o structured outputs
+18:20:36  DEBUG  ═══ OPENAI REQUEST ════════════════════════════════════════════════
+Model: gpt-4o-2024-08-06
+response_format: json_schema / driver_profile (strict)
+── system ──────────────────────────────────────────────────────────
+You are a logistics data extractor. Extract a structured driver profile from the
+dispatch conversation transcript provided by the user.
+
+Return a JSON object that matches the schema exactly. Follow these rules:
+
+current_location
+  The city/state where the driver physically IS right now (not home, not a destination).
+  Provide decimal-degree lat/lon if the city is known; otherwise set null.
+
+home_base
+  The driver's primary operating base or home city.
+  Provide decimal-degree lat/lon if known; otherwise set null.
+
+minimum_rate_per_mile
+  The lowest effective $/mile the DRIVER will accept.
+  Extract only from the driver's own statements — do NOT use the dispatcher's rate quotes.
+
+equipment_types
+  List of equipment types the driver explicitly says they OWN or OPERATE.
+  Use canonical names: Hotshot, Gooseneck, Flatbed, Van, Reefer, Stepdeck, Lowboy, Tanker.
+  Do NOT include equipment types the driver merely asks about rhetorically.
+
+weight_capacity_lb
+  Max weight in lbs. If not explicitly stated:
+    - Infer only when equipment type gives clear basis (e.g. "hotshot gooseneck" → ~15000 lb).
+    - Set inferred=true and document the assumption.
+    - Set value=null if you cannot infer with reasonable confidence.
+
+constraints
+  Explicit constraints the driver states (lane avoidances, factoring requirements, etc.).
+
+notes
+  Any additional relevant information not captured above.
+
+evidence
+  Quote the exact phrase from the transcript that supports each extracted value.
+
+confidence
+  0.0–1.0. Use 1.0 for explicit statements, 0.7–0.9 for strong inferences,
+  below 0.7 for weak inferences. Set null fields with confidence < 0.5.
+
+── user ────────────────────────────────────────────────────────────
+TRANSCRIPT:
+Driver: I’m looking for hotshot loads.
+Dispatch: Where are you located?
+Driver: I’m in Dallas right now.
+Dispatch: Where is home?
+Driver: Home base is San Antonio, Texas.
+Dispatch: What equipment?
+Driver: Hotshot only.
+Dispatch: Weight capacity?
+Driver: Max is 13,000 pounds.
+Dispatch: Minimum rate?
+Driver: I need at least $2 per mile.
+Dispatch: Any lanes?
+Driver: South Texas is best. Houston, Laredo, McAllen, Corpus, San Antonio.
+
+City coordinate lookup table (for reference when setting lat/lon):
+  abilene, tx
+  amarillo, tx
+  arlington, tx
+  atlanta, ga
+  austin, tx
+  baton rouge, la
+  beaumont, tx
+  brownsville, tx
+  corpus christi, tx
+  dallas, tx
+  el paso, tx
+  fort worth, tx
+  gainesville, fl
+  houston, tx
+  huntsville, tx
+  jackson, ms
+  jacksonville, fl
+  laredo, tx
+  longview, tx
+  lubbock, tx
+  mcallen, tx
+  memphis, tn
+  midland, tx
+  nashville, tn
+  new orleans, la
+  odessa, tx
+  oklahoma city, ok
+  orlando, fl
+  plano, tx
+  rio grande valley, tx
+  san antonio, tx
+  san marcos, tx
+  shreveport, la
+  temple, tx
+  tulsa, ok
+  tyler, tx
+  victoria, tx
+  waco, tx
+  wichita falls, tx
+18:20:36  DEBUG  Request options: {'method': 'post', 'url': '/chat/completions', 'files': None, 'idempotency_key': 'stainless-python-retry-c533309e-0af0-4bcd-a1dc-bd35b09fe103', 'json_data': {'messages': [{'role': 'system', 'content': 'You are a logistics data extractor. Extract a structured driver profile from the\ndispatch conversation transcript provided by the user.\n\nReturn a JSON object that matches the schema exactly. Follow these rules:\n\ncurrent_location\n  The city/state where the driver physically IS right now (not home, not a destination).\n  Provide decimal-degree lat/lon if the city is known; otherwise set null.\n\nhome_base\n  The driver\'s primary operating base or home city.\n  Provide decimal-degree lat/lon if known; otherwise set null.\n\nminimum_rate_per_mile\n  The lowest effective $/mile the DRIVER will accept.\n  Extract only from the driver\'s own statements — do NOT use the dispatcher\'s rate quotes.\n\nequipment_types\n  List of equipment types the driver explicitly says they OWN or OPERATE.\n  Use canonical names: Hotshot, Gooseneck, Flatbed, Van, Reefer, Stepdeck, Lowboy, Tanker.\n  Do NOT include equipment types the driver merely asks about rhetorically.\n\nweight_capacity_lb\n  Max weight in lbs. If not explicitly stated:\n    - Infer only when equipment type gives clear basis (e.g. "hotshot gooseneck" → ~15000 lb).\n    - Set inferred=true and document the assumption.\n    - Set value=null if you cannot infer with reasonable confidence.\n\nconstraints\n  Explicit constraints the driver states (lane avoidances, factoring requirements, etc.).\n\nnotes\n  Any additional relevant information not captured above.\n\nevidence\n  Quote the exact phrase from the transcript that supports each extracted value.\n\nconfidence\n  0.0–1.0. Use 1.0 for explicit statements, 0.7–0.9 for strong inferences,\n  below 0.7 for weak inferences. Set null fields with confidence < 0.5.\n'}, {'role': 'user', 'content': 'TRANSCRIPT:\nDriver: I’m looking for hotshot loads.\nDispatch: Where are you located?\nDriver: I’m in Dallas right now.\nDispatch: Where is home?\nDriver: Home base is San Antonio, Texas.\nDispatch: What equipment?\nDriver: Hotshot only.\nDispatch: Weight capacity?\nDriver: Max is 13,000 pounds.\nDispatch: Minimum rate?\nDriver: I need at least $2 per mile.\nDispatch: Any lanes?\nDriver: South Texas is best. Houston, Laredo, McAllen, Corpus, San Antonio.\n\nCity coordinate lookup table (for reference when setting lat/lon):\n  abilene, tx\n  amarillo, tx\n  arlington, tx\n  atlanta, ga\n  austin, tx\n  baton rouge, la\n  beaumont, tx\n  brownsville, tx\n  corpus christi, tx\n  dallas, tx\n  el paso, tx\n  fort worth, tx\n  gainesville, fl\n  houston, tx\n  huntsville, tx\n  jackson, ms\n  jacksonville, fl\n  laredo, tx\n  longview, tx\n  lubbock, tx\n  mcallen, tx\n  memphis, tn\n  midland, tx\n  nashville, tn\n  new orleans, la\n  odessa, tx\n  oklahoma city, ok\n  orlando, fl\n  plano, tx\n  rio grande valley, tx\n  san antonio, tx\n  san marcos, tx\n  shreveport, la\n  temple, tx\n  tulsa, ok\n  tyler, tx\n  victoria, tx\n  waco, tx\n  wichita falls, tx'}], 'model': 'gpt-4o-2024-08-06', 'response_format': {'type': 'json_schema', 'json_schema': {'name': 'driver_profile', 'strict': True, 'schema': {'type': 'object', 'properties': {'current_location': {'type': 'object', 'properties': {'city_state': {'type': ['string', 'null']}, 'lat': {'type': ['number', 'null']}, 'lon': {'type': ['number', 'null']}, 'evidence': {'type': 'string'}, 'confidence': {'type': 'number'}}, 'required': ['city_state', 'lat', 'lon', 'evidence', 'confidence'], 'additionalProperties': False}, 'home_base': {'type': 'object', 'properties': {'city_state': {'type': ['string', 'null']}, 'lat': {'type': ['number', 'null']}, 'lon': {'type': ['number', 'null']}, 'evidence': {'type': 'string'}, 'confidence': {'type': 'number'}}, 'required': ['city_state', 'lat', 'lon', 'evidence', 'confidence'], 'additionalProperties': False}, 'minimum_rate_per_mile': {'type': 'object', 'properties': {'value': {'type': ['number', 'null']}, 'evidence': {'type': 'string'}, 'confidence': {'type': 'number'}}, 'required': ['value', 'evidence', 'confidence'], 'additionalProperties': False}, 'equipment_types': {'type': 'object', 'properties': {'value': {'type': 'array', 'items': {'type': 'string'}}, 'evidence': {'type': 'string'}, 'confidence': {'type': 'number'}}, 'required': ['value', 'evidence', 'confidence'], 'additionalProperties': False}, 'weight_capacity_lb': {'type': 'object', 'properties': {'value': {'type': ['integer', 'null']}, 'evidence': {'type': 'string'}, 'confidence': {'type': 'number'}, 'inferred': {'type': 'boolean'}, 'assumption': {'type': ['string', 'null']}}, 'required': ['value', 'evidence', 'confidence', 'inferred', 'assumption'], 'additionalProperties': False}, 'constraints': {'type': 'array', 'items': {'type': 'object', 'properties': {'type': {'type': 'string'}, 'value': {'type': 'string'}, 'evidence': {'type': 'string'}}, 'required': ['type', 'value', 'evidence'], 'additionalProperties': False}}, 'notes': {'type': 'array', 'items': {'type': 'string'}}}, 'required': ['current_location', 'home_base', 'minimum_rate_per_mile', 'equipment_types', 'weight_capacity_lb', 'constraints', 'notes'], 'additionalProperties': False}}}}}
+18:20:36  DEBUG  Sending HTTP Request: POST https://api.openai.com/v1/chat/completions
+18:20:36  DEBUG  connect_tcp.started host='api.openai.com' port=443 local_address=None timeout=5.0 socket_options=None
+18:20:36  DEBUG  connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x11dd8ca60>
+18:20:36  DEBUG  start_tls.started ssl_context=<ssl.SSLContext object at 0x11d70adc0> server_hostname='api.openai.com' timeout=5.0
+18:20:36  DEBUG  start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x11dd8cac0>
+18:20:36  DEBUG  send_request_headers.started request=<Request [b'POST']>
+18:20:36  DEBUG  send_request_headers.complete
+18:20:36  DEBUG  send_request_body.started request=<Request [b'POST']>
+18:20:36  DEBUG  send_request_body.complete
+18:20:36  DEBUG  receive_response_headers.started request=<Request [b'POST']>
+18:20:39  DEBUG  receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Date', b'Thu, 18 Jun 2026 21:20:39 GMT'), (b'Content-Type', b'application/json'), (b'Transfer-Encoding', b'chunked'), (b'Connection', b'keep-alive'), (b'CF-Ray', b'a0dd56c4ef1b59a3-EZE'), (b'CF-Cache-Status', b'DYNAMIC'), (b'Server', b'cloudflare'), (b'Strict-Transport-Security', b'max-age=31536000; includeSubDomains; preload'), (b'X-Content-Type-Options', b'nosniff'), (b'access-control-expose-headers', b'X-Request-ID'), (b'access-control-expose-headers', b'CF-Ray'), (b'Access-Control-Expose-Headers', b'CF-Ray'), (b'openai-organization', b'user-9m69tlngon8zdifdeg4xtbl5'), (b'openai-processing-ms', b'2788'), (b'openai-project', b'proj_HGNaMrwTRXRw0KpmOlicZL5u'), (b'openai-version', b'2020-10-01'), (b'x-openai-proxy-wasm', b'v0.1'), (b'x-ratelimit-limit-requests', b'500'), (b'x-ratelimit-limit-tokens', b'30000'), (b'x-ratelimit-remaining-requests', b'499'), (b'x-ratelimit-remaining-tokens', b'29302'), (b'x-ratelimit-reset-requests', b'120ms'), (b'x-ratelimit-reset-tokens', b'1.396s'), (b'x-request-id', b'req_f6d36c990d904081ab1931e91bf34cab'), (b'set-cookie', b'__cf_bm=SByaimE_zhh1IhorA0Nzo0u9OQJgXYGdilgWdm8UtEE-1781817636.6244876-1.0.1.1-63Hsq41cdsKcMzu2Dl3kRoZ_N9kH2TvH1kGa7gMk8iuxzxNQCw3D8.k7QichlkRvY42eK35axixIcvcBWpExrbk0Q7ttODnB1c6v5U5_w5GAUIYEvBMETD24dtKZefwI; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 18 Jun 2026 21:50:39 GMT'), (b'Content-Encoding', b'gzip'), (b'alt-svc', b'h3=":443"; ma=86400')])
+18:20:39  INFO  HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+18:20:39  DEBUG  receive_response_body.started request=<Request [b'POST']>
+18:20:39  DEBUG  receive_response_body.complete
+18:20:39  DEBUG  response_closed.started
+18:20:39  DEBUG  response_closed.complete
+18:20:39  DEBUG  HTTP Response: POST https://api.openai.com/v1/chat/completions "200 OK" Headers([('date', 'Thu, 18 Jun 2026 21:20:39 GMT'), ('content-type', 'application/json'), ('transfer-encoding', 'chunked'), ('connection', 'keep-alive'), ('cf-ray', 'a0dd56c4ef1b59a3-EZE'), ('cf-cache-status', 'DYNAMIC'), ('server', 'cloudflare'), ('strict-transport-security', 'max-age=31536000; includeSubDomains; preload'), ('x-content-type-options', 'nosniff'), ('access-control-expose-headers', 'X-Request-ID'), ('access-control-expose-headers', 'CF-Ray'), ('access-control-expose-headers', 'CF-Ray'), ('openai-organization', 'user-9m69tlngon8zdifdeg4xtbl5'), ('openai-processing-ms', '2788'), ('openai-project', 'proj_HGNaMrwTRXRw0KpmOlicZL5u'), ('openai-version', '2020-10-01'), ('x-openai-proxy-wasm', 'v0.1'), ('x-ratelimit-limit-requests', '500'), ('x-ratelimit-limit-tokens', '30000'), ('x-ratelimit-remaining-requests', '499'), ('x-ratelimit-remaining-tokens', '29302'), ('x-ratelimit-reset-requests', '120ms'), ('x-ratelimit-reset-tokens', '1.396s'), ('x-request-id', 'req_f6d36c990d904081ab1931e91bf34cab'), ('set-cookie', '__cf_bm=SByaimE_zhh1IhorA0Nzo0u9OQJgXYGdilgWdm8UtEE-1781817636.6244876-1.0.1.1-63Hsq41cdsKcMzu2Dl3kRoZ_N9kH2TvH1kGa7gMk8iuxzxNQCw3D8.k7QichlkRvY42eK35axixIcvcBWpExrbk0Q7ttODnB1c6v5U5_w5GAUIYEvBMETD24dtKZefwI; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 18 Jun 2026 21:50:39 GMT'), ('content-encoding', 'gzip'), ('alt-svc', 'h3=":443"; ma=86400')])
+18:20:39  DEBUG  request_id: req_f6d36c990d904081ab1931e91bf34cab
+18:20:39  DEBUG  ═══ OPENAI RESPONSE ═══════════════════════════════════════════════
+finish_reason : stop
+usage         : prompt=1046  completion=224  total=1270
+── content ─────────────────────────────────────────────────────────
+{
+  "current_location": {
+    "city_state": "Dallas, TX",
+    "lat": 32.7767,
+    "lon": -96.797,
+    "evidence": "Driver: I’m in Dallas right now.",
+    "confidence": 1.0
+  },
+  "home_base": {
+    "city_state": "San Antonio, TX",
+    "lat": 29.4241,
+    "lon": -98.4936,
+    "evidence": "Driver: Home base is San Antonio, Texas.",
+    "confidence": 1.0
+  },
+  "minimum_rate_per_mile": {
+    "value": 2.0,
+    "evidence": "Driver: I need at least $2 per mile.",
+    "confidence": 1.0
+  },
+  "equipment_types": {
+    "value": [
+      "Hotshot"
+    ],
+    "evidence": "Driver: Hotshot only.",
+    "confidence": 1.0
+  },
+  "weight_capacity_lb": {
+    "value": 13000,
+    "evidence": "Driver: Max is 13,000 pounds.",
+    "confidence": 1.0,
+    "inferred": false,
+    "assumption": null
+  },
+  "constraints": [
+    {
+      "type": "preferred_lane",
+      "value": "South Texas",
+      "evidence": "Driver: South Texas is best. Houston, Laredo, McAllen, Corpus, San Antonio."
+    }
+  ],
+  "notes": []
+}
+18:20:39  INFO  ── Extracted profile (method: openai-gpt4o) ──
+{
+  "current_location": {
+    "city_state": "Dallas, TX",
+    "lat": 32.7767,
+    "lon": -96.797,
+    "evidence": "Driver: I’m in Dallas right now.",
+    "confidence": 1.0
+  },
+  "home_base": {
+    "city_state": "San Antonio, TX",
+    "lat": 29.4241,
+    "lon": -98.4936,
+    "evidence": "Driver: Home base is San Antonio, Texas.",
+    "confidence": 1.0
+  },
+  "minimum_rate_per_mile": {
+    "value": 2.0,
+    "evidence": "Driver: I need at least $2 per mile.",
+    "confidence": 1.0
+  },
+  "equipment_types": {
+    "value": [
+      "Hotshot"
+    ],
+    "evidence": "Driver: Hotshot only.",
+    "confidence": 1.0
+  },
+  "weight_capacity_lb": {
+    "value": 13000,
+    "evidence": "Driver: Max is 13,000 pounds.",
+    "confidence": 1.0,
+    "inferred": false,
+    "assumption": null
+  },
+  "constraints": [
+    {
+      "type": "preferred_lane",
+      "value": "South Texas",
+      "evidence": "Driver: South Texas is best. Houston, Laredo, McAllen, Corpus, San Antonio."
+    }
+  ],
+  "notes": []
+}
+18:20:39  INFO  [3/5] Loading loads...
+18:20:39  INFO    6 complete  |  2 skipped
+18:20:39  INFO    SKIP    L06: Price missing or non-numeric (got 'MISSING')
+18:20:39  INFO    SKIP    L07: Destination city missing; Dest Lat missing or non-numeric; Dest Lon missing or non-numeric
+18:20:39  INFO  [4/5] Filtering and ranking loads...
+18:20:39  INFO    REJECT  L01: Trailer 'Van' (→ 'van') not in driver equipment ['Hotshot'] (→ ['hotshot'])
+18:20:39  INFO    REJECT  L03: Trailer 'Gooseneck' (→ 'gooseneck') not in driver equipment ['Hotshot'] (→ ['hotshot'])
+18:20:39  INFO    REJECT  L04: Trailer 'Van' (→ 'van') not in driver equipment ['Hotshot'] (→ ['hotshot'])
+18:20:39  INFO    REJECT  L05: Trailer 'Flatbed' (→ 'flatbed') not in driver equipment ['Hotshot'] (→ ['hotshot'])
+18:20:39  INFO    All eligible loads (2) sorted by effective rate:
+18:20:39  INFO    L08  Dallas          → McAllen               $2.480/mi  DH   0.0 + loaded 462.3 + DH-home 223.1 =  685.4 mi  ← #1
+18:20:39  INFO    L02  Houston         → Laredo                $2.418/mi  DH 224.8 + loaded 293.0 + DH-home 143.9 =  661.7 mi  ← #2
+18:20:39  INFO  [5/5] Writing output/Hotshot_cinesis_good_fit_test_output.xlsx...
+18:20:39  DEBUG  close.started
+18:20:39  DEBUG  close.complete
+18:20:41  INFO  Done. Log guardado en: /Users/smrivero/Documents/GitHub/cinesis/logs/log_20260618_182035.log

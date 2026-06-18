@@ -1,0 +1,263 @@
+18:19:33  INFO  Input:  cinesis_good_fit_test_clean.xlsx
+18:19:33  INFO  Output: output/cinesis_good_fit_test_output.xlsx
+18:19:33  INFO  [1/5] Building city coordinate table...
+18:19:33  INFO    78 entries
+18:19:33  INFO  [2/5] Extracting driver profile...
+18:19:33  INFO    → OpenAI GPT-4o structured outputs
+18:19:35  DEBUG  ═══ OPENAI REQUEST ════════════════════════════════════════════════
+Model: gpt-4o-2024-08-06
+response_format: json_schema / driver_profile (strict)
+── system ──────────────────────────────────────────────────────────
+You are a logistics data extractor. Extract a structured driver profile from the
+dispatch conversation transcript provided by the user.
+
+Return a JSON object that matches the schema exactly. Follow these rules:
+
+current_location
+  The city/state where the driver physically IS right now (not home, not a destination).
+  Provide decimal-degree lat/lon if the city is known; otherwise set null.
+
+home_base
+  The driver's primary operating base or home city.
+  Provide decimal-degree lat/lon if known; otherwise set null.
+
+minimum_rate_per_mile
+  The lowest effective $/mile the DRIVER will accept.
+  Extract only from the driver's own statements — do NOT use the dispatcher's rate quotes.
+
+equipment_types
+  List of equipment types the driver explicitly says they OWN or OPERATE.
+  Use canonical names: Hotshot, Gooseneck, Flatbed, Van, Reefer, Stepdeck, Lowboy, Tanker.
+  Do NOT include equipment types the driver merely asks about rhetorically.
+
+weight_capacity_lb
+  Max weight in lbs. If not explicitly stated:
+    - Infer only when equipment type gives clear basis (e.g. "hotshot gooseneck" → ~15000 lb).
+    - Set inferred=true and document the assumption.
+    - Set value=null if you cannot infer with reasonable confidence.
+
+constraints
+  Explicit constraints the driver states (lane avoidances, factoring requirements, etc.).
+
+notes
+  Any additional relevant information not captured above.
+
+evidence
+  Quote the exact phrase from the transcript that supports each extracted value.
+
+confidence
+  0.0–1.0. Use 1.0 for explicit statements, 0.7–0.9 for strong inferences,
+  below 0.7 for weak inferences. Set null fields with confidence < 0.5.
+
+── user ────────────────────────────────────────────────────────────
+TRANSCRIPT:
+Driver: Like, tell me a little bit about how y’all can assist me.
+Dispatch: I think you’re based out in San Antonio. Is that correct?
+Driver: Yes, that’s correct. I’m usually in that area, but I'm in Dallas.
+Dispatch: So for example, I’ve got about 30 loads that need to be moved on Tuesday, and most of my best loads are at least $4 per mile. I’ve got one coming out of San Antonio to Huntsville with one of our preferred brokers, and that’s paying $1,100.
+Driver: For that Huntsville load, what’s the weight and the loaded miles? And is it straight-through delivery or next day?
+Dispatch: So this load is 44,000 pounds, and the loaded miles is about two seventeen in total.
+Driver: Do y’all deal with hotshots too, like flatbeds or goosenecks?
+Dispatch: Yes, we work with hotshots. On average, each of our top drivers is doing about three loads a week, which adds roughly $2,000 to their weekly earnings.
+Driver: And if you have a load from Corpus to Odessa for $1,000, do you negotiate it or just take it?
+Dispatch: If a load is listed at $2,000 and you want $2,500, we’ll go to the broker and try to get you above $2,500. If they won’t go above $2,500, we won’t accept the load.
+Driver: Two thousand is not enough.
+Driver: If I don’t book a load for a few weeks and then need something out of Houston, can I just call you anytime?
+Driver: Do you have a load board I can access, or do I have to go through you for every load?
+Driver: How does your pay structure work?
+Driver: I also need to make sure the broker is valid for my factoring company. Some brokers aren’t factorable because they don’t pay or aren’t approved.
+Driver: Who’s your factoring company?
+Dispatch: If we’ve got a load going to the Odessa/Midland area—paying $1,800. Do you want it?
+Driver: Yeah, I’ll take it.
+Driver: I might only run two or three days a week, but I still make good money—like $2,300 to $2,500 going Corpus to Odessa, or $1,800 to $2,000 from San Antonio to Midland. I run a hotshot gooseneck trailer.
+Driver: It just depends on the rate. I don’t like going north because of Austin, Houston, and Waco traffic. I prefer South Texas lanes like Laredo, Corpus, Rio Grande Valley, Midland, and Odessa.
+Driver: As long as it’s above $2 per mile, I’ll consider it. I already have enough work that I can skip loads if they’re not worth it.
+Dispatch: We’ve actually booked the most loads in South Texas. We also see a lot going to Ohio, Oregon, Oklahoma, and Florida.
+Driver: Maybe you can send me your website so I can take a look. I’d like to try a load or two, see how it works with my factoring company, and then go from there.
+Dispatch: Have a good one.
+Driver: Yes, sir.
+
+City coordinate lookup table (for reference when setting lat/lon):
+  abilene, tx
+  amarillo, tx
+  arlington, tx
+  atlanta, ga
+  austin, tx
+  baton rouge, la
+  beaumont, tx
+  brownsville, tx
+  corpus christi, tx
+  dallas, tx
+  el paso, tx
+  fort worth, tx
+  gainesville, fl
+  houston, tx
+  huntsville, tx
+  jackson, ms
+  jacksonville, fl
+  laredo, tx
+  longview, tx
+  lubbock, tx
+  mcallen, tx
+  memphis, tn
+  midland, tx
+  nashville, tn
+  new orleans, la
+  odessa, tx
+  oklahoma city, ok
+  orlando, fl
+  plano, tx
+  rio grande valley, tx
+  san antonio, tx
+  san marcos, tx
+  shreveport, la
+  temple, tx
+  tulsa, ok
+  tyler, tx
+  victoria, tx
+  waco, tx
+  wichita falls, tx
+18:19:35  DEBUG  Request options: {'method': 'post', 'url': '/chat/completions', 'files': None, 'idempotency_key': 'stainless-python-retry-b844681b-0a95-4338-89ab-d5c6d028c762', 'json_data': {'messages': [{'role': 'system', 'content': 'You are a logistics data extractor. Extract a structured driver profile from the\ndispatch conversation transcript provided by the user.\n\nReturn a JSON object that matches the schema exactly. Follow these rules:\n\ncurrent_location\n  The city/state where the driver physically IS right now (not home, not a destination).\n  Provide decimal-degree lat/lon if the city is known; otherwise set null.\n\nhome_base\n  The driver\'s primary operating base or home city.\n  Provide decimal-degree lat/lon if known; otherwise set null.\n\nminimum_rate_per_mile\n  The lowest effective $/mile the DRIVER will accept.\n  Extract only from the driver\'s own statements — do NOT use the dispatcher\'s rate quotes.\n\nequipment_types\n  List of equipment types the driver explicitly says they OWN or OPERATE.\n  Use canonical names: Hotshot, Gooseneck, Flatbed, Van, Reefer, Stepdeck, Lowboy, Tanker.\n  Do NOT include equipment types the driver merely asks about rhetorically.\n\nweight_capacity_lb\n  Max weight in lbs. If not explicitly stated:\n    - Infer only when equipment type gives clear basis (e.g. "hotshot gooseneck" → ~15000 lb).\n    - Set inferred=true and document the assumption.\n    - Set value=null if you cannot infer with reasonable confidence.\n\nconstraints\n  Explicit constraints the driver states (lane avoidances, factoring requirements, etc.).\n\nnotes\n  Any additional relevant information not captured above.\n\nevidence\n  Quote the exact phrase from the transcript that supports each extracted value.\n\nconfidence\n  0.0–1.0. Use 1.0 for explicit statements, 0.7–0.9 for strong inferences,\n  below 0.7 for weak inferences. Set null fields with confidence < 0.5.\n'}, {'role': 'user', 'content': "TRANSCRIPT:\nDriver: Like, tell me a little bit about how y’all can assist me.\nDispatch: I think you’re based out in San Antonio. Is that correct?\nDriver: Yes, that’s correct. I’m usually in that area, but I'm in Dallas.\nDispatch: So for example, I’ve got about 30 loads that need to be moved on Tuesday, and most of my best loads are at least $4 per mile. I’ve got one coming out of San Antonio to Huntsville with one of our preferred brokers, and that’s paying $1,100.\nDriver: For that Huntsville load, what’s the weight and the loaded miles? And is it straight-through delivery or next day?\nDispatch: So this load is 44,000 pounds, and the loaded miles is about two seventeen in total.\nDriver: Do y’all deal with hotshots too, like flatbeds or goosenecks?\nDispatch: Yes, we work with hotshots. On average, each of our top drivers is doing about three loads a week, which adds roughly $2,000 to their weekly earnings.\nDriver: And if you have a load from Corpus to Odessa for $1,000, do you negotiate it or just take it?\nDispatch: If a load is listed at $2,000 and you want $2,500, we’ll go to the broker and try to get you above $2,500. If they won’t go above $2,500, we won’t accept the load.\nDriver: Two thousand is not enough.\nDriver: If I don’t book a load for a few weeks and then need something out of Houston, can I just call you anytime?\nDriver: Do you have a load board I can access, or do I have to go through you for every load?\nDriver: How does your pay structure work?\nDriver: I also need to make sure the broker is valid for my factoring company. Some brokers aren’t factorable because they don’t pay or aren’t approved.\nDriver: Who’s your factoring company?\nDispatch: If we’ve got a load going to the Odessa/Midland area—paying $1,800. Do you want it?\nDriver: Yeah, I’ll take it.\nDriver: I might only run two or three days a week, but I still make good money—like $2,300 to $2,500 going Corpus to Odessa, or $1,800 to $2,000 from San Antonio to Midland. I run a hotshot gooseneck trailer.\nDriver: It just depends on the rate. I don’t like going north because of Austin, Houston, and Waco traffic. I prefer South Texas lanes like Laredo, Corpus, Rio Grande Valley, Midland, and Odessa.\nDriver: As long as it’s above $2 per mile, I’ll consider it. I already have enough work that I can skip loads if they’re not worth it.\nDispatch: We’ve actually booked the most loads in South Texas. We also see a lot going to Ohio, Oregon, Oklahoma, and Florida.\nDriver: Maybe you can send me your website so I can take a look. I’d like to try a load or two, see how it works with my factoring company, and then go from there.\nDispatch: Have a good one.\nDriver: Yes, sir.\n\nCity coordinate lookup table (for reference when setting lat/lon):\n  abilene, tx\n  amarillo, tx\n  arlington, tx\n  atlanta, ga\n  austin, tx\n  baton rouge, la\n  beaumont, tx\n  brownsville, tx\n  corpus christi, tx\n  dallas, tx\n  el paso, tx\n  fort worth, tx\n  gainesville, fl\n  houston, tx\n  huntsville, tx\n  jackson, ms\n  jacksonville, fl\n  laredo, tx\n  longview, tx\n  lubbock, tx\n  mcallen, tx\n  memphis, tn\n  midland, tx\n  nashville, tn\n  new orleans, la\n  odessa, tx\n  oklahoma city, ok\n  orlando, fl\n  plano, tx\n  rio grande valley, tx\n  san antonio, tx\n  san marcos, tx\n  shreveport, la\n  temple, tx\n  tulsa, ok\n  tyler, tx\n  victoria, tx\n  waco, tx\n  wichita falls, tx"}], 'model': 'gpt-4o-2024-08-06', 'response_format': {'type': 'json_schema', 'json_schema': {'name': 'driver_profile', 'strict': True, 'schema': {'type': 'object', 'properties': {'current_location': {'type': 'object', 'properties': {'city_state': {'type': ['string', 'null']}, 'lat': {'type': ['number', 'null']}, 'lon': {'type': ['number', 'null']}, 'evidence': {'type': 'string'}, 'confidence': {'type': 'number'}}, 'required': ['city_state', 'lat', 'lon', 'evidence', 'confidence'], 'additionalProperties': False}, 'home_base': {'type': 'object', 'properties': {'city_state': {'type': ['string', 'null']}, 'lat': {'type': ['number', 'null']}, 'lon': {'type': ['number', 'null']}, 'evidence': {'type': 'string'}, 'confidence': {'type': 'number'}}, 'required': ['city_state', 'lat', 'lon', 'evidence', 'confidence'], 'additionalProperties': False}, 'minimum_rate_per_mile': {'type': 'object', 'properties': {'value': {'type': ['number', 'null']}, 'evidence': {'type': 'string'}, 'confidence': {'type': 'number'}}, 'required': ['value', 'evidence', 'confidence'], 'additionalProperties': False}, 'equipment_types': {'type': 'object', 'properties': {'value': {'type': 'array', 'items': {'type': 'string'}}, 'evidence': {'type': 'string'}, 'confidence': {'type': 'number'}}, 'required': ['value', 'evidence', 'confidence'], 'additionalProperties': False}, 'weight_capacity_lb': {'type': 'object', 'properties': {'value': {'type': ['integer', 'null']}, 'evidence': {'type': 'string'}, 'confidence': {'type': 'number'}, 'inferred': {'type': 'boolean'}, 'assumption': {'type': ['string', 'null']}}, 'required': ['value', 'evidence', 'confidence', 'inferred', 'assumption'], 'additionalProperties': False}, 'constraints': {'type': 'array', 'items': {'type': 'object', 'properties': {'type': {'type': 'string'}, 'value': {'type': 'string'}, 'evidence': {'type': 'string'}}, 'required': ['type', 'value', 'evidence'], 'additionalProperties': False}}, 'notes': {'type': 'array', 'items': {'type': 'string'}}}, 'required': ['current_location', 'home_base', 'minimum_rate_per_mile', 'equipment_types', 'weight_capacity_lb', 'constraints', 'notes'], 'additionalProperties': False}}}}}
+18:19:35  DEBUG  Sending HTTP Request: POST https://api.openai.com/v1/chat/completions
+18:19:35  DEBUG  connect_tcp.started host='api.openai.com' port=443 local_address=None timeout=5.0 socket_options=None
+18:19:35  DEBUG  connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x118fbf7c0>
+18:19:35  DEBUG  start_tls.started ssl_context=<ssl.SSLContext object at 0x11583ea40> server_hostname='api.openai.com' timeout=5.0
+18:19:35  DEBUG  start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x118ffc910>
+18:19:35  DEBUG  send_request_headers.started request=<Request [b'POST']>
+18:19:35  DEBUG  send_request_headers.complete
+18:19:35  DEBUG  send_request_body.started request=<Request [b'POST']>
+18:19:35  DEBUG  send_request_body.complete
+18:19:35  DEBUG  receive_response_headers.started request=<Request [b'POST']>
+18:19:39  DEBUG  receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Date', b'Thu, 18 Jun 2026 21:19:39 GMT'), (b'Content-Type', b'application/json'), (b'Transfer-Encoding', b'chunked'), (b'Connection', b'keep-alive'), (b'CF-Ray', b'a0dd554a7b50e97f-EZE'), (b'CF-Cache-Status', b'DYNAMIC'), (b'Server', b'cloudflare'), (b'Strict-Transport-Security', b'max-age=31536000; includeSubDomains; preload'), (b'X-Content-Type-Options', b'nosniff'), (b'access-control-expose-headers', b'X-Request-ID'), (b'access-control-expose-headers', b'CF-Ray'), (b'Access-Control-Expose-Headers', b'CF-Ray'), (b'openai-organization', b'user-9m69tlngon8zdifdeg4xtbl5'), (b'openai-processing-ms', b'2416'), (b'openai-project', b'proj_HGNaMrwTRXRw0KpmOlicZL5u'), (b'openai-version', b'2020-10-01'), (b'x-openai-proxy-wasm', b'v0.1'), (b'x-ratelimit-limit-requests', b'500'), (b'x-ratelimit-limit-tokens', b'30000'), (b'x-ratelimit-remaining-requests', b'499'), (b'x-ratelimit-remaining-tokens', b'28733'), (b'x-ratelimit-reset-requests', b'120ms'), (b'x-ratelimit-reset-tokens', b'2.534s'), (b'x-request-id', b'req_9ecb223b812c42789616a1f67fc8a35e'), (b'set-cookie', b'__cf_bm=_WbQ.lQtAb1iBOFKa8f397rmrl9_bRivsCScLALdYMQ-1781817576.0759106-1.0.1.1-LX0w2Iw2K6RcN1.apw0sdpLtZdqKr3K8BslND_IfGjuTBhStBKqhPx231hdJ5kx5.InlBBnPX2ce0j7iqZY.VYauGnBlJrfrMVDGKcgAhG4qLVEgKlJYo9YNFGzfH488; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 18 Jun 2026 21:49:39 GMT'), (b'Content-Encoding', b'gzip'), (b'alt-svc', b'h3=":443"; ma=86400')])
+18:19:39  INFO  HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+18:19:39  DEBUG  receive_response_body.started request=<Request [b'POST']>
+18:19:39  DEBUG  receive_response_body.complete
+18:19:39  DEBUG  response_closed.started
+18:19:39  DEBUG  response_closed.complete
+18:19:39  DEBUG  HTTP Response: POST https://api.openai.com/v1/chat/completions "200 OK" Headers([('date', 'Thu, 18 Jun 2026 21:19:39 GMT'), ('content-type', 'application/json'), ('transfer-encoding', 'chunked'), ('connection', 'keep-alive'), ('cf-ray', 'a0dd554a7b50e97f-EZE'), ('cf-cache-status', 'DYNAMIC'), ('server', 'cloudflare'), ('strict-transport-security', 'max-age=31536000; includeSubDomains; preload'), ('x-content-type-options', 'nosniff'), ('access-control-expose-headers', 'X-Request-ID'), ('access-control-expose-headers', 'CF-Ray'), ('access-control-expose-headers', 'CF-Ray'), ('openai-organization', 'user-9m69tlngon8zdifdeg4xtbl5'), ('openai-processing-ms', '2416'), ('openai-project', 'proj_HGNaMrwTRXRw0KpmOlicZL5u'), ('openai-version', '2020-10-01'), ('x-openai-proxy-wasm', 'v0.1'), ('x-ratelimit-limit-requests', '500'), ('x-ratelimit-limit-tokens', '30000'), ('x-ratelimit-remaining-requests', '499'), ('x-ratelimit-remaining-tokens', '28733'), ('x-ratelimit-reset-requests', '120ms'), ('x-ratelimit-reset-tokens', '2.534s'), ('x-request-id', 'req_9ecb223b812c42789616a1f67fc8a35e'), ('set-cookie', '__cf_bm=_WbQ.lQtAb1iBOFKa8f397rmrl9_bRivsCScLALdYMQ-1781817576.0759106-1.0.1.1-LX0w2Iw2K6RcN1.apw0sdpLtZdqKr3K8BslND_IfGjuTBhStBKqhPx231hdJ5kx5.InlBBnPX2ce0j7iqZY.VYauGnBlJrfrMVDGKcgAhG4qLVEgKlJYo9YNFGzfH488; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 18 Jun 2026 21:49:39 GMT'), ('content-encoding', 'gzip'), ('alt-svc', 'h3=":443"; ma=86400')])
+18:19:39  DEBUG  request_id: req_9ecb223b812c42789616a1f67fc8a35e
+18:19:39  DEBUG  ═══ OPENAI RESPONSE ═══════════════════════════════════════════════
+finish_reason : stop
+usage         : prompt=1617  completion=369  total=1986
+── content ─────────────────────────────────────────────────────────
+{
+  "current_location": {
+    "city_state": "dallas, tx",
+    "lat": 32.7767,
+    "lon": -96.797,
+    "evidence": "Driver: Yes, that’s correct. I’m usually in that area, but I'm in Dallas.",
+    "confidence": 1.0
+  },
+  "home_base": {
+    "city_state": "san antonio, tx",
+    "lat": 29.4241,
+    "lon": -98.4936,
+    "evidence": "Dispatch: I think you’re based out in San Antonio. Is that correct?\nDriver: Yes, that’s correct.",
+    "confidence": 1.0
+  },
+  "minimum_rate_per_mile": {
+    "value": 2.0,
+    "evidence": "Driver: As long as it’s above $2 per mile, I’ll consider it.",
+    "confidence": 1.0
+  },
+  "equipment_types": {
+    "value": [
+      "Hotshot",
+      "Gooseneck"
+    ],
+    "evidence": "Driver: I run a hotshot gooseneck trailer.",
+    "confidence": 1.0
+  },
+  "weight_capacity_lb": {
+    "value": 15000,
+    "evidence": "Driver: I run a hotshot gooseneck trailer.",
+    "confidence": 0.8,
+    "inferred": true,
+    "assumption": "Typical capacity for hotshot gooseneck trailers."
+  },
+  "constraints": [
+    {
+      "type": "Lane avoidance",
+      "value": "Avoiding routes through Austin, Houston, and Waco",
+      "evidence": "Driver: I don’t like going north because of Austin, Houston, and Waco traffic."
+    },
+    {
+      "type": "Factoring requirements",
+      "value": "Brokers must be valid for driver's factoring company.",
+      "evidence": "Driver: I also need to make sure the broker is valid for my factoring company."
+    }
+  ],
+  "notes": [
+    "Prefers loads in South Texas lanes like Laredo, Corpus, Rio Grande Valley, Midland, and Odessa.",
+    "Driver might only run two or three days a week but makes sufficient income."
+  ]
+}
+18:19:39  INFO  ── Extracted profile (method: openai-gpt4o) ──
+{
+  "current_location": {
+    "city_state": "dallas, tx",
+    "lat": 32.7767,
+    "lon": -96.797,
+    "evidence": "Driver: Yes, that’s correct. I’m usually in that area, but I'm in Dallas.",
+    "confidence": 1.0
+  },
+  "home_base": {
+    "city_state": "san antonio, tx",
+    "lat": 29.4241,
+    "lon": -98.4936,
+    "evidence": "Dispatch: I think you’re based out in San Antonio. Is that correct?\nDriver: Yes, that’s correct.",
+    "confidence": 1.0
+  },
+  "minimum_rate_per_mile": {
+    "value": 2.0,
+    "evidence": "Driver: As long as it’s above $2 per mile, I’ll consider it.",
+    "confidence": 1.0
+  },
+  "equipment_types": {
+    "value": [
+      "Hotshot",
+      "Gooseneck"
+    ],
+    "evidence": "Driver: I run a hotshot gooseneck trailer.",
+    "confidence": 1.0
+  },
+  "weight_capacity_lb": {
+    "value": 15000,
+    "evidence": "Driver: I run a hotshot gooseneck trailer.",
+    "confidence": 0.8,
+    "inferred": true,
+    "assumption": "Typical capacity for hotshot gooseneck trailers."
+  },
+  "constraints": [
+    {
+      "type": "Lane avoidance",
+      "value": "Avoiding routes through Austin, Houston, and Waco",
+      "evidence": "Driver: I don’t like going north because of Austin, Houston, and Waco traffic."
+    },
+    {
+      "type": "Factoring requirements",
+      "value": "Brokers must be valid for driver's factoring company.",
+      "evidence": "Driver: I also need to make sure the broker is valid for my factoring company."
+    }
+  ],
+  "notes": [
+    "Prefers loads in South Texas lanes like Laredo, Corpus, Rio Grande Valley, Midland, and Odessa.",
+    "Driver might only run two or three days a week but makes sufficient income."
+  ]
+}
+18:19:39  INFO  [3/5] Loading loads...
+18:19:39  DEBUG  close.started
+18:19:39  DEBUG  close.complete
+18:19:39  INFO    6 complete  |  2 skipped
+18:19:39  INFO    SKIP    L06: Price missing or non-numeric (got 'MISSING')
+18:19:39  INFO    SKIP    L07: Destination city missing; Dest Lat missing or non-numeric; Dest Lon missing or non-numeric
+18:19:39  INFO  [4/5] Filtering and ranking loads...
+18:19:39  INFO    REJECT  L01: Trailer 'Van' (→ 'van') not in driver equipment ['Hotshot', 'Gooseneck'] (→ ['hotshot', 'gooseneck'])
+18:19:39  INFO    REJECT  L04: Trailer 'Van' (→ 'van') not in driver equipment ['Hotshot', 'Gooseneck'] (→ ['hotshot', 'gooseneck'])
+18:19:39  INFO    REJECT  L05: Trailer 'Flatbed' (→ 'flatbed') not in driver equipment ['Hotshot', 'Gooseneck'] (→ ['hotshot', 'gooseneck'])
+18:19:39  INFO    All eligible loads (3) sorted by effective rate:
+18:19:39  INFO    L03  Austin          → Corpus Christi        $3.098/mi  DH 182.1 + loaded 171.7 + DH-home 130.4 =  484.3 mi  ← #1
+18:19:39  INFO    L08  Dallas          → McAllen               $2.480/mi  DH   0.0 + loaded 462.3 + DH-home 223.1 =  685.4 mi  ← #2
+18:19:39  INFO    L02  Houston         → Laredo                $2.418/mi  DH 224.8 + loaded 293.0 + DH-home 143.9 =  661.7 mi  ← #3
+18:19:39  INFO  [5/5] Writing output/cinesis_good_fit_test_output.xlsx...
+18:19:41  INFO  Done. Log guardado en: /Users/smrivero/Documents/GitHub/cinesis/logs/log_20260618_181933.log
