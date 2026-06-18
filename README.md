@@ -31,7 +31,7 @@ python3 solve_cinesis_test.py <archivo_entrada> <archivo_salida>
 
 - La extensión `.xlsx` en el input es opcional — el script la agrega si falta.
 - La carpeta de output se crea automáticamente si no existe.
-- Si omitís los argumentos usa `cinesis_good_fit_test_clean.xlsx` y `cinesis_good_fit_test_completed.xlsx` por defecto.
+- Si omitís los argumentos usa `good_fit_test_clean.xlsx` y `good_fit_test_completed.xlsx` por defecto.
 
 ### Con logs de OpenAI visibles en consola
 
@@ -48,28 +48,28 @@ Activa la impresión del prompt completo enviado a OpenAI y la respuesta JSON cr
 ```bash
 # Conversación original del test
 OPENAI_LOG=1 python3 solve_cinesis_test.py \
-  cinesis_good_fit_test_clean \
-  output/cinesis_good_fit_test_output.xlsx
+  good_fit_test_clean \
+  output/good_fit_test_output.xlsx
 
 # Driver con equipo Reefer saliendo de Tulsa
 OPENAI_LOG=1 python3 solve_cinesis_test.py \
-  Tulsa_Reefer_cinesis_good_fit_test_clean \
-  output/Tulsa_Reefer_cinesis_good_fit_test_output.xlsx
+  Tulsa_Reefer_good_fit_test_clean \
+  output/Tulsa_Reefer_good_fit_test_output.xlsx
 
 # Driver con Van
 OPENAI_LOG=1 python3 solve_cinesis_test.py \
-  VAN_cinesis_good_fit_test_clean \
-  output/VAN_cinesis_good_fit_test_output.xlsx
+  VAN_good_fit_test_clean \
+  output/VAN_good_fit_test_output.xlsx
 
 # Driver Hotshot
 OPENAI_LOG=1 python3 solve_cinesis_test.py \
-  Hotshot_cinesis_good_fit_test_clean \
-  output/Hotshot_cinesis_good_fit_test_output.xlsx
+  Hotshot_good_fit_test_clean \
+  output/Hotshot_good_fit_test_output.xlsx
 
 # Driver Flatbed
 OPENAI_LOG=1 python3 solve_cinesis_test.py \
-  Flatbed_cinesis_good_fit_test_clean \
-  output/Flatbed_cinesis_good_fit_test_output.xlsx
+  Flatbed_good_fit_test_clean \
+  output/Flatbed_good_fit_test_output.xlsx
 ```
 
 ---
@@ -114,7 +114,7 @@ El script lee la transcripción del tab `Sample Conversation` y extrae un objeto
 | `current_location` | Frase del driver tipo "I'm in Dallas" — solo líneas del driver |
 | `home_base` | Dispatch menciona ciudad → driver confirma ("Yes, that's correct / usually in that area") |
 | `minimum_rate_per_mile` | Frase del driver con "per mile" — solo líneas del driver para no confundir con las cotizaciones del dispatcher |
-| `equipment_types` | Solo líneas del driver que contienen marcadores de posesión ("I run", "I drive", "I have") — excluye preguntas retóricas como "¿Do y'all deal with hotshots?" |
+| `equipment_types` | Solo líneas del driver que contienen marcadores de posesión ("I run", "I drive", "I have") — excluye preguntas retóricas como "Do y'all deal with hotshots?" |
 | `weight_capacity_lb` | Si el driver lo dice explícitamente se usa ese valor. Si no, se infiere del equipo (`inferred: true`) con una nota de la suposición |
 | `constraints` / `notes` | Preferencias de lanes, factoring, días de trabajo, etc. |
 
@@ -122,7 +122,7 @@ El script lee la transcripción del tab `Sample Conversation` y extrae un objeto
 
 **Fallback determinístico (sin API key):** regex y keywords sobre las líneas del driver. Produce el mismo objeto JSON con los mismos campos.
 
-Después de cualquier extracción, el script rellena coordenadas nulas usando la tabla de ciudades local (sin APIs externas).
+**Coordenadas:** cuando se usa OpenAI, el modelo devuelve directamente `lat` y `lon` para cada ciudad — GPT-4o conoce las coordenadas de cualquier ciudad del mundo. La tabla de ciudades local solo se usa como red de seguridad en el fallback determinístico (sin API key) y para rellenar coordenadas que el modelo haya dejado en null.
 
 ### Part B — Filtrado y ranking
 
@@ -136,12 +136,12 @@ Todas las distancias se calculan con la fórmula **Haversine** (distancia en lí
 
 #### Por qué se excluyen las filas con MISSING
 
-Las filas `L06` y `L07` tienen campos marcados como `MISSING` en el workbook:
+Algunas filas de la tabla de cargas tienen campos marcados como `MISSING`:
 
-- **L06:** el precio está `MISSING` → sin precio no se puede calcular el effective rate, la fórmula divide por algo desconocido. Se registra el motivo y se omite.
-- **L07:** el destino y sus coordenadas están `MISSING` → sin destino no se puede calcular `loaded_miles` ni `deadhead_home`. Se registra el motivo y se omite.
+- **Sin precio:** no se puede calcular el effective rate (la fórmula requiere el numerador). Se registra el motivo y se omite.
+- **Sin destino o coordenadas de destino:** no se puede calcular `loaded_miles` ni `deadhead_home`. Se registra el motivo y se omite.
 
-El script también descarta filas donde esos valores son vacíos, `NaN`, o no numéricos — no sólo el string literal `"MISSING"` — para ser robusto ante cualquier variante de dato ausente.
+El script también descarta filas donde esos valores son vacíos, `NaN`, o no numéricos — no solo el string literal `"MISSING"` — para ser robusto ante cualquier variante de dato ausente.
 
 #### Filtros aplicados antes del ranking (en orden)
 
