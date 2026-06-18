@@ -1,4 +1,6 @@
-# Cinesis Good Fit Test — Solution
+#  Good Fit Test — Solution
+
+
 
 ## Usage
 
@@ -13,6 +15,11 @@ Set `OPENAI_API_KEY` in your environment to use GPT-4o structured outputs for
 profile extraction. Without it the script uses deterministic keyword extraction.
 The script produces the same output structure either way.
 
+OPENAI_LOG=1 python3 solve_cinesis_test.py cinesis_good_fit_test_clean output/cinesis_good_fit_test_output.xlsx
+OPENAI_LOG=1 python3 solve_cinesis_test.py Tulsa_Reefer_cinesis_good_fit_test_clean output/Tulsa_Reefer_cinesis_good_fit_test_output.xlsx
+OPENAI_LOG=1 python3 solve_cinesis_test.py VAN_cinesis_good_fit_test_clean output/VAN_cinesis_good_fit_test_output.xlsx
+OPENAI_LOG=1 python3 solve_cinesis_test.py Hotshot_cinesis_good_fit_test_clean output/Hotshot_cinesis_good_fit_test_output.xlsx
+OPENAI_LOG=1 python3 solve_cinesis_test.py Flatbed_cinesis_good_fit_test_clean output/Flatbed_cinesis_good_fit_test_output.xlsx
 ---
 
 ## Design
